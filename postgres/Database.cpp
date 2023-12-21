@@ -1,39 +1,106 @@
 #include "Database.h"
 
-#include <string>
+#include <string_view>
+#include <type_traits>
 
 #include <pqxx/pqxx>
 #include <pqxx/notification>
 #include <pqxx/transaction>
 #include <pqxx/transactor>
 
-#define DATABASE_HOSTNAME "localhost"    // Хост 127.0.0.1
-#define DATABASE_PORT      5432          // Порт
-#define DATABASE_POSTGRES "postgres"     // Название базы данных по-умолчанию
-#define DATABASE_USER     "agaltsevstas" // Имя пользователя
-#define DATABASE_PASSWORD ""             // Пароль
-#define DATABASE_NAME     "test"         // Название базы данных
-#define DATABASE_TABLE    "person"       // Название таблицы
 
+#if 0
+    #define DATABASE_HOSTNAME "localhost"    // Хост 127.0.0.1
+    #define DATABASE_PORT      5432          // Порт
+    #define DATABASE_POSTGRES "postgres"     // Название базы данных по-умолчанию
+    #define DATABASE_USER     "agaltsevstas" // Имя пользователя
+    #define DATABASE_PASSWORD ""             // Пароль
+    #define DATABASE_NAME     "test"         // Название базы данных
+    #define DATABASE_TABLE    "person"       // Название таблицы
+#endif
+
+constexpr std::string_view database_hostname = "localhost"; // Хост 127.0.0.1
+constexpr unsigned database_port = 5432;                    // Порт
+constexpr std::string_view database_postgres = "postgres";  // Название базы данных по-умолчанию
+constexpr std::string_view database_user = "agaltsevstas";  // Имя пользователя
+constexpr std::string_view database_password = "";          // Пароль
+constexpr std::string_view database_name = "test";          // Название базы данных
+constexpr std::string_view database_table = "person";       // Название таблицы
 
 using Data = DatabaseFacade::Data;
 
-DatabaseFacade::~DatabaseFacade()
+Data::Data(unsigned iKey,
+           const std::string& iSurname,
+           const std::string& iName,
+           const std::string& iPatronymic,
+           const std::string& iSex,
+           unsigned iAge)
+{
+    key = iKey;
+    surname = iSurname;
+    name = iName;
+    patronymic = iPatronymic;
+    sex = iSex;
+    age = iAge;
+}
+
+Data::Data(const std::string& iSurname,
+           const std::string& iName,
+           const std::string& iPatronymic,
+           const std::string& iSex,
+           unsigned iAge)
+{
+    Data(0, iSurname, iName, iPatronymic, iSex, iAge);
+}
+
+Data::Data(const Data& other) noexcept
+{
+    *this = other;
+}
+
+Data::Data(Data&& other) noexcept
+{
+    *this = std::move(other);
+}
+
+Data& Data::operator=(Data&& other) noexcept
+{
+    key = std::exchange(other.key, 0);
+    surname = std::move(other.surname);
+    name = std::move(other.name);
+    patronymic = std::move(other.patronymic);
+    sex = std::move(other.sex);
+    age = std::exchange(other.age, 0);
+    return *this;
+}
+
+Data& Data::operator=(const Data& other) noexcept
+{
+    key = other.key;
+    surname = other.surname;
+    name = other.name;
+    patronymic = other.patronymic;
+    sex = other.sex;
+    age = other.age;
+    return *this;
+}
+
+DatabaseFacade::~DatabaseFacade() noexcept
 {
     
 }
 
-DatabaseFacade::DatabaseFacade()
+DatabaseFacade::DatabaseFacade() noexcept
 {
     
 }
 
-void operator >> (pqxx::stream_from &iStream, Data& oObject)
+bool operator >> (pqxx::stream_from &iStream, Data& oObject)
 {
     std::tuple<unsigned, std::string, std::string, std::string, std::string, unsigned> row;
     iStream >> row;
     if (!iStream)
-        return;
+        return false;
     
     oObject.key = std::get<0>(row);
     oObject.surname = std::get<1>(row);
@@ -41,13 +108,13 @@ void operator >> (pqxx::stream_from &iStream, Data& oObject)
     oObject.patronymic = std::get<3>(row);
     std::copy(std::get<3>(row).begin(), std::get<3>(row).end(), oObject.sex.data());
     oObject.age = std::get<5>(row);
+    return true;
 }
 
 pqxx::stream_to& operator << (pqxx::stream_to& ioStream, const Data& iObject)
 {
     ioStream << std::make_tuple
     (
-         iObject.key,
          iObject.surname,
          iObject.name,
          iObject.patronymic,
@@ -77,11 +144,11 @@ DatabaseFacade& DatabaseFacade::Instance()
 bool DatabaseFacade::_Load(const std::string& iDatabaseName)
 {
     std::cout << "Подключение к базе данных: " + iDatabaseName << std::endl;
-    const std::string query = "host=" + std::string(DATABASE_HOSTNAME) +
-                              " port=" + std::to_string(DATABASE_PORT) +
+    const std::string query = "host=" + std::string(database_hostname) +
+                              " port=" + std::to_string(database_port) +
                               " dbname=" + iDatabaseName +
-                              " user=" + DATABASE_USER +
-                              " password=" + DATABASE_PASSWORD;
+                              " user=" + std::string(database_user) +
+                              " password=" + std::string(database_password);
     try
     {
         _db = std::make_unique<pqxx::connection>(query); // Соединение с PostgresSQL
@@ -112,7 +179,7 @@ bool DatabaseFacade::_Load(const std::string& iDatabaseName)
 
 bool DatabaseFacade::Load()
 {
-    return _Load(std::string(DATABASE_POSTGRES));
+    return _Load(database_postgres.data());
 }
 
 bool DatabaseFacade::Create()
@@ -120,8 +187,8 @@ bool DatabaseFacade::Create()
     pqxx::nontransaction transaction(*_db.get());
     try
     {
-        std::cerr << "Попытка создать базу данных: " + std::string(DATABASE_NAME) << std::endl;
-        const std::string query = "CREATE DATABASE " + std::string(DATABASE_NAME) + " TEMPLATE=template0 ENCODING 'UTF-8' LC_COLLATE 'ru_RU.UTF-8' LC_CTYPE 'ru_RU.UTF-8'";
+        std::cerr << "Попытка создать базу данных: " + std::string(database_name) << std::endl;
+        const std::string query = "CREATE DATABASE " + std::string(database_name) + " TEMPLATE=template0 ENCODING 'UTF-8' LC_COLLATE 'ru_RU.UTF-8' LC_CTYPE 'ru_RU.UTF-8'";
         pqxx::result res = transaction.exec(query);
         transaction.commit();
         _db->close();
@@ -131,13 +198,13 @@ bool DatabaseFacade::Create()
     catch (const pqxx::sql_error& exception)
     {
         transaction.abort();
-        std::cerr << "Ошибка при создании базы данных "  + std::string(DATABASE_NAME) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при создании базы данных "  + std::string(database_name) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (const std::exception &exception)
     {
         transaction.abort();
-        std::cerr << "Ошибка при создании базы данных "  + std::string(DATABASE_NAME) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при создании базы данных "  + std::string(database_name) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (...)
@@ -152,11 +219,12 @@ bool DatabaseFacade::Create()
 
 bool DatabaseFacade::Delete()
 {
-    pqxx::transaction<> transaction(*_db.get(), "delete: " + std::string(DATABASE_NAME));
+    pqxx::transaction<> transaction(*_db.get());
     pqxx::subtransaction subTransaction(transaction);
     try
     {
-        pqxx::result res = subTransaction.exec0("DROP TABLE " + std::string(DATABASE_NAME));
+        const std::string query = "DROP DATABASE " + std::string(database_name);
+        pqxx::result res = subTransaction.exec0(query.data());
         if (res.empty())
             return false;
         
@@ -191,35 +259,70 @@ bool DatabaseFacade::Delete()
     return true;
 }
 
+bool DatabaseFacade::ClearTable()
+{
+    pqxx::transaction<> transaction(*_db.get());
+    try
+    {
+        const std::string query = "DELETE FROM " + std::string(database_table);
+        transaction.exec(query);
+        transaction.commit();
+        return true;
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Ошибка при очистки таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Ошибка при очистки таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Ошибка при очистки таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
 bool DatabaseFacade::DeleteTable()
 {
-    pqxx::transaction<> transaction(*_db.get(), "delete: " + std::string(DATABASE_TABLE));
+    pqxx::transaction<> transaction(*_db.get());
     pqxx::subtransaction subTransaction(transaction);
     try
     {
-        pqxx::result res = subTransaction.exec0("DROP TABLE " + std::string(DATABASE_TABLE));
-        if (res.empty())
-            return false;
-        
+        const std::string query = "DROP TABLE " + std::string(database_table);
+        subTransaction.exec0(query);
         subTransaction.commit();
         return true;
     }
     catch (const pqxx::undefined_table& exception)
     {
         subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (const pqxx::data_exception& exception)
     {
         subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (const std::exception& exception)
     {
         subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (...)
@@ -237,26 +340,26 @@ bool DatabaseFacade::CreateTable()
     pqxx::nontransaction transaction(*_db.get());
     try
     {
-        const std::string query = "CREATE TABLE IF NOT EXISTS " + std::string(DATABASE_TABLE) + "(id serial primary key, surname text NOT NULL, name text NOT NULL, patronymic text NOT NULL, sex varchar(3) NOT NULL, age smallint[3] NOT NULL)";
+        const std::string query = "CREATE TABLE IF NOT EXISTS " + std::string(database_table) + "(id serial primary key, surname text NOT NULL, name text NOT NULL, patronymic text NOT NULL, sex text NOT NULL, age smallint NOT NULL)";
         transaction.exec(query);
         transaction.commit();
     }
     catch (const pqxx::undefined_table& exception)
     {
         transaction.abort();
-        std::cerr << "Ошибка при создании таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при создании таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (const pqxx::data_exception& exception)
     {
         transaction.abort();
-        std::cerr << "Ошибка при создании таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при создании таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
-    catch(const std::exception& exception)
+    catch (const std::exception& exception)
     {
         transaction.abort();
-        std::cerr << "Ошибка при создании таблицы " + std::string(DATABASE_TABLE) + ": " << exception.what() << std::endl;
+        std::cerr << "Ошибка при создании таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (...)
@@ -271,7 +374,7 @@ bool DatabaseFacade::CreateTable()
 
 bool DatabaseFacade::Connection()
 {
-    if (!_Load(std::string(DATABASE_NAME)))
+    if (!_Load(std::string(database_name)))
         if (!Create())
             return false;
     
@@ -293,66 +396,205 @@ bool DatabaseFacade::IsOpen()
     return _db && _db->is_open();
 }
 
-bool DatabaseFacade::FindUserID(const std::string& iSurname,
-                const std::string& iName,
-                const std::string& iPatronymic,
-                unsigned& OKey)
+template <typename T>
+bool DatabaseFacade::ExecuteRequest(const std::string& iQuery, T& oResult)
 {
+    pqxx::transaction<> transaction(*_db.get());
+    
+    try
+    {
+        oResult = transaction.query_value<T>(iQuery);
+        transaction.commit();
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    
+    
     return true;
 }
 
-bool DatabaseFacade::FindUser(unsigned iKey,
-              Data& oData)
+bool DatabaseFacade::ExecuteRequest(const std::string& iQuery)
 {
+    pqxx::transaction<> transaction(*_db.get());
+    try
+    {
+        transaction.exec0(iQuery);
+        transaction.commit();
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    
     return true;
 }
 
-bool DatabaseFacade::FindUser(const std::string& iSurname,
-              const std::string& iName,
-              const std::string& iPatronymic,
-              Data& oData)
+bool DatabaseFacade::UpdateUser(unsigned iKey, const Data& iUser)
 {
-    return true;
-}
-
-bool DatabaseFacade::FindUser(unsigned iKey,
-                              std::string& oSurname,
-                              std::string& oName,
-                              std::string& oPatronymic,
-                              std::array<char, 3>& oSex,
-                              std::array<char, 3>& oAge)
-{
-    return true;
-}
-
-bool DatabaseFacade::UpdateUser(unsigned iKey, const Data& iData)
-{
+    pqxx::transaction<> transaction(*_db.get());
+    try
+    {
+        const std::string query = "UPDATE " + std::string(database_table) + " SET surname=$2, name=$3, patronymic=$4, sex=$4, age=$7 WHERE id = $1";
+        _db->prepare("update", query);
+        transaction.exec_prepared("update", iUser.key, iUser.surname, iUser.name, iUser.patronymic, iUser.sex.data(), iUser.age);
+        transaction.commit();
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    
     return true;
 }
 
 bool DatabaseFacade::UpdateSurname(unsigned iKey, const std::string& iSurname)
 {
-    return true;
+    const std::string query = "UPDATE " + std::string(database_table) + " SET surname=" + iSurname + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
 }
 
 bool DatabaseFacade::UpdateName(unsigned iKey, const std::string& iName)
 {
-    return true;
+    const std::string query = "UPDATE " + std::string(database_table) + " SET name=" + iName + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
 }
 
 bool DatabaseFacade::UpdatePatronymic(unsigned iKey, const std::string& iPatronymic)
 {
+    const std::string query = "UPDATE " + std::string(database_table) + " SET patronymic=" + iPatronymic + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
+}
+
+bool DatabaseFacade::UpdateSex(unsigned iKey, const std::string& iSex)
+{
+    const std::string query = "UPDATE " + std::string(database_table) + " SET sex=" + iSex +  + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
+}
+
+bool DatabaseFacade::UpdateAge(unsigned iKey, unsigned iAge)
+{
+    const std::string query = "UPDATE " + std::string(database_table) + " SET age=" + std::to_string(iAge) +  + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
+}
+
+bool DatabaseFacade::AddUser(const Data& iUser)
+{
+    pqxx::transaction<> transaction(*_db.get());
+    
+    try
+    {
+        const std::string query = "insert into person (surname, name, patronymic, sex, age) values($1, $2, $3, $4, $5)";
+        
+        pqxx::params params;
+        params.reserve(5);
+        params.append(iUser.surname);
+        params.append(iUser.name);
+        params.append(iUser.patronymic);
+        params.append(iUser.sex.data());
+        params.append(iUser.age);
+        
+        transaction.exec_params(query, params);
+        transaction.commit();
+        std::cout << "Пользователь успешно добавлен!" << std::endl;
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    
     return true;
 }
 
-bool DatabaseFacade::UpdateSex(unsigned iKey, const std::array<char, 3>& iSex)
+bool DatabaseFacade::AddUser(const std::string& iSurname,
+                             const std::string& iName,
+                             const std::string& iPatronymic,
+                             const std::string& iSex,
+                             unsigned iAge)
 {
-    return true;
-}
-
-bool DatabaseFacade::UpdateAge(unsigned iKey, const std::array<char, 3>& iAge)
-{
-    return true;
+    auto user = Data(iSurname, iName, iPatronymic, iSex, iAge);
+    return AddUser(user);
 }
 
 bool DatabaseFacade::AddUsers(const std::vector<Data>& iUsers)
@@ -377,16 +619,6 @@ bool DatabaseFacade::AddUsers(const std::vector<Data>& iUsers)
         {
             for (const auto& user : iUsers)
             {
-//                auto row = std::make_tuple
-//                (
-//                    user.key,
-//                    user.surname,
-//                    user.name,
-//                    user.patronymic,
-//                    user.sex.data(),
-//                    user.age
-//                 );
-//                stream.write_row(row);
                 stream.write_values(user.key, user.surname, user.name, user.patronymic, user.sex.data(), user.age);
             }
         }
@@ -394,11 +626,29 @@ bool DatabaseFacade::AddUsers(const std::vector<Data>& iUsers)
 #if 0
         // 3 Способ
         {
-//            const std::string query = "insert into person (id, position, surname, name, patronymic, sex, age) values($1, $2, $3, $4, $5, $6)";
-//            pqxx::params params;
-//            params.append_multi(iUsers); // Добавление вектора
-//            transaction.exec_params(query, params);
-//            transaction.commit();
+            for (const auto& user : iUsers)
+            {
+                auto row = std::make_tuple
+                (
+                    user.key,
+                    user.surname,
+                    user.name,
+                    user.patronymic,
+                    user.sex.data(),
+                    user.age
+                 );
+                stream.write_row(row);
+            }
+        }
+#endif
+#if 0
+        // 4 Способ
+        {
+            const std::string query = "insert into person (id, surname, name, patronymic, sex, age) values($1, $2, $3, $4, $5, $6)";
+            pqxx::params params;
+            params.append_multi(iUsers); // Добавление вектора
+            transaction.exec_params(query, params);
+            transaction.commit();
         }
 #endif
     }
@@ -414,7 +664,7 @@ bool DatabaseFacade::AddUsers(const std::vector<Data>& iUsers)
         std::cerr << "Неверный запрос: " << exception.what() << std::endl;
         return false;
     }
-    catch(const std::exception& exception)
+    catch (const std::exception& exception)
     {
         transaction.abort();
         std::cerr << "Неверный запрос: " << exception.what() << std::endl;
@@ -430,24 +680,43 @@ bool DatabaseFacade::AddUsers(const std::vector<Data>& iUsers)
     return true;
 }
 
-bool DatabaseFacade::AddUser(const Data& iUser)
+bool DatabaseFacade::DeleteUser(unsigned iKey)
+{
+    const std::string query = "DELETE FROM " + std::string(database_table) + " WHERE id=" + std::to_string(iKey);
+    return ExecuteRequest(query);
+}
+
+bool DatabaseFacade::DeleteUser(const std::string& iSurname,
+                                const std::string& iName,
+                                const std::string& iPatronymic)
+{
+    const std::string query = "DELETE FROM " + std::string(database_table) + " WHERE surname=" + iSurname + " AND name=" + iName + " AND patronymic=" + iPatronymic;
+    return ExecuteRequest(query);
+}
+
+bool DatabaseFacade::FindUserID(const std::string& iSurname,
+                                const std::string& iName,
+                                const std::string& iPatronymic,
+                                unsigned& oKey)
+{
+    const std::string query = "SELECT id FROM " +  std::string(database_table) + " WHERE surname = " + iSurname +
+                                                                                 " AND name = " + iName +
+                                                                                 " AND patronymic = " + iPatronymic;
+    if (!ExecuteRequest(query, oKey))
+        return false;
+    
+    return true;
+}
+
+bool DatabaseFacade::FindUser(const std::string& iQuery, Data& oData)
 {
     pqxx::transaction<> transaction(*_db.get());
-    
     try
     {
-        const std::string query = "insert into person (id, position, surname, name, patronymic, sex, age) values($1, $2, $3, $4, $5, $6)";
+        pqxx::row row = transaction.exec1(iQuery);
+        if (row.empty())
+            return false;
         
-        pqxx::params params;
-        params.reserve(6);
-        params.append(iUser.key);
-        params.append(iUser.surname);
-        params.append(iUser.name);
-        params.append(iUser.patronymic);
-        params.append(iUser.sex.data());
-        params.append(iUser.age);
-        
-        transaction.exec_params(query, params);
         transaction.commit();
     }
     catch (const pqxx::undefined_table& exception)
@@ -462,7 +731,7 @@ bool DatabaseFacade::AddUser(const Data& iUser)
         std::cerr << "Неверный запрос: " << exception.what() << std::endl;
         return false;
     }
-    catch(const std::exception& exception)
+    catch (const std::exception& exception)
     {
         transaction.abort();
         std::cerr << "Неверный запрос: " << exception.what() << std::endl;
@@ -478,39 +747,164 @@ bool DatabaseFacade::AddUser(const Data& iUser)
     return true;
 }
 
-bool DatabaseFacade::AddUser(unsigned iKey,
-                             const std::string& iSurname,
-                             const std::string& iName,
-                             const std::string& iPatronymic,
-                             const std::array<char, 3>& iSex,
-                             const std::array<char, 3>& iAge)
+bool DatabaseFacade::FindUser(unsigned iKey, Data& oData)
 {
-    return true;
+    const std::string query = "SELECT id FROM " + std::string(database_table) + " where id = " + std::to_string(iKey);
+    return FindUser(query, oData);
 }
 
-bool DatabaseFacade::DeleteUser(unsigned iKey)
+bool DatabaseFacade::FindUser(const std::string& iSurname,
+                              const std::string& iName,
+                              const std::string& iPatronymic,
+                              Data& oData)
 {
-    return true;
+    const std::string query = "SELECT id FROM " + std::string(database_table) + " where surname = " + iSurname +
+                                                                                " AND name = " + iName +
+                                                                                " AND patronymic = " + iPatronymic;
+    return FindUser(query, oData);
 }
 
-bool DatabaseFacade::DeleteUser(const std::string& iSurname,
-                                const std::string& iName,
-                                const std::string& iPatronymic)
+bool DatabaseFacade::FindUser(unsigned iKey,
+                              std::string& oSurname,
+                              std::string& oName,
+                              std::string& oPatronymic,
+                              std::string& oSex,
+                              unsigned& oAge)
 {
+    const std::string query = "SELECT id FROM " + std::string(database_table) + " where id = " + std::to_string(iKey);
+    Data data;
+    if (!FindUser(query, data))
+        return false;
+    
+    oSurname = std::move(data.surname);
+    oName = std::move(data.name);
+    oPatronymic = std::move(data.patronymic);
+    oSex = std::move(data.sex);
+    oAge = std::move(data.age);
+    
     return true;
 }
 
 bool DatabaseFacade::GetAll(std::vector<Data>& oUsers)
 {
-    return true;
+    pqxx::transaction<> transaction(*_db.get());
+    
+    try
+    {
+#if 1
+        // 1 Способ
+        {
+            const std::string query = "SELECT * FROM " + std::string(database_table);
+            auto stream = pqxx::stream_from(transaction, query);
+            Data user;
+            while (stream >> user)
+                oUsers.emplace_back(user);
+            stream.complete();
+            transaction.commit();
+        }
+#endif
+#if 0
+        // 2 Способ
+        {
+            const std::string query = "SELECT * FROM " + std::string(database_table);
+            pqxx::result result = transaction.exec(query);
+            if (result.empty())
+                throw query;
+
+            for (const auto& row: result)
+            {
+                Data user;
+                row >> user;
+                objects.emplace_back(user);
+                transaction.commit();
+            }
+        }
+#endif
+#if 0
+        // 3 Способ
+        {
+            const std::string query = "SELECT id, surname, name, patronymic, sex, age FROM " + std::string(database_table);
+            pqxx::result result = transaction.exec(query);
+            if (result.empty())
+                throw query;
+            
+            for (const auto& row: result)
+            {
+                Data user;
+                row >> user;
+                oUsers.emplace_back(user);
+                transaction.commit();
+            }
+        }
+#endif
+#if 0
+        // 4 Способ
+        {
+            const std::string query = "(SELECT id, surname::TEXT, name::TEXT, patronymic::TEXT, sex::TEXT, age FROM " + std::string(database_table) + ")";
+            for (auto [id, surname, name, patronymic, sex, age] : transaction.stream<unsigned, std::string_view, std::string_view, std::string_view, std::string_view, unsigned>(query))
+            {
+                Data user;
+                user.key = id;
+                user.surname = surname;
+                user.name = name;
+                user.patronymic = patronymic;
+                std::copy(sex.begin(), sex.end(), user.sex.data());
+                user.age = age;
+                oUsers.emplace_back(user);
+            }
+        }
+#endif
+    }
+    catch (const std::string &exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception << std::endl;
+        return false;
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        transaction.abort();
+        std::cerr << "Неверный запрос: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+        
+    return !oUsers.empty();
 }
 
-bool Add()
+bool DatabaseFacade::IsTableEmpty()
 {
-    return false;
-}
-
-bool DatabaseFacade::IsEmpty()
-{
-    return false;
+    bool result;
+    // Check exist table
+    {
+        const std::string query = std::string("SELECT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES") + " WHERE TABLE_NAME = '" + std::string(database_table) + "')";
+        if (!ExecuteRequest(query, result))
+            return false;
+    }
+    
+    // Check table empty
+    {
+        const std::string query = "SELECT (SELECT count(*) FROM " + std::string(database_table) + ") = 0";
+        if (!result || !ExecuteRequest<bool>(query, result))
+            return false;
+    }
+    
+    return result;
 }

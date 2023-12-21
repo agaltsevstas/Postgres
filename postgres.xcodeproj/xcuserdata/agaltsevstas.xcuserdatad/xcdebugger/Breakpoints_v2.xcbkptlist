@@ -3,4 +3,132 @@
    uuid = "7F727B83-A68D-4276-9853-7C40743F2A4A"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CE5CAD7C-95E6-401B-8E6B-59094C5FB925"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "postgres/Database.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "228"
+            endingLineNumber = "228"
+            landmarkName = "DatabaseFacade::Delete()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "CE5CAD7C-95E6-401B-8E6B-59094C5FB925 - d745ae2b7da1c20"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::Delete()"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "173"
+                  endingLineNumber = "173"
+                  offsetFromSymbolStart = "212">
+               </Location>
+               <Location
+                  uuid = "CE5CAD7C-95E6-401B-8E6B-59094C5FB925 - d745ae2b7da1c03"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::Delete()"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "172"
+                  endingLineNumber = "172"
+                  offsetFromSymbolStart = "164">
+               </Location>
+               <Location
+                  uuid = "CE5CAD7C-95E6-401B-8E6B-59094C5FB925 - d745ae2b7da1c03"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::Delete()"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "172"
+                  endingLineNumber = "172"
+                  offsetFromSymbolStart = "212">
+               </Location>
+               <Location
+                  uuid = "CE5CAD7C-95E6-401B-8E6B-59094C5FB925 - d745ae2b7da053b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::Delete()"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "228"
+                  endingLineNumber = "228"
+                  offsetFromSymbolStart = "212">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "5108AC6F-0820-4EA5-AF2B-0DCA8B37E673"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "postgres/Database.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "558"
+            endingLineNumber = "558"
+            landmarkName = "DatabaseFacade::AddUser(iUser)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "5108AC6F-0820-4EA5-AF2B-0DCA8B37E673 - d9e6a1cb51bc927e"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::AddUser(DatabaseFacade::Data const&amp;)"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "502"
+                  endingLineNumber = "502"
+                  offsetFromSymbolStart = "224">
+               </Location>
+               <Location
+                  uuid = "5108AC6F-0820-4EA5-AF2B-0DCA8B37E673 - d9e6a1cb51bc9b36"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "DatabaseFacade::AddUser(DatabaseFacade::Data const&amp;)"
+                  moduleName = "postgres"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/agaltsevstas/Yandex.Disk-agaltsev.stas.localized/%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80%20SOSIMBA/Programming/postgres/postgres/Database.cpp"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "558"
+                  endingLineNumber = "558"
+                  offsetFromSymbolStart = "224">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>
