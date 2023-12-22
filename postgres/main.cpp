@@ -331,9 +331,6 @@ int main(int argc, const char * argv[])
     
     if (!db.Connection())
         return EXIT_FAILURE;
-
-    if (!db.IsOpen())
-        return EXIT_FAILURE;
     
     while (true)
     {

@@ -220,35 +220,71 @@ bool DatabaseFacade::Create()
 
 bool DatabaseFacade::Delete()
 {
-    pqxx::transaction<> transaction(*_db.get());
-    pqxx::subtransaction subTransaction(transaction);
+    pqxx::nontransaction transaction(*_db.get());
     try
     {
         const std::string query = "DROP DATABASE " + std::string(database_name);
-        pqxx::result res = subTransaction.exec(query.data());
-        if (res.empty())
-            return false;
-        
-        subTransaction.commit();
+        pqxx::result res = transaction.exec0(query.data());
+        transaction.commit();
         std::cout << "База данных " + std::string(database_name) + " успешно удалилась" << std::endl;
         return true;
     }
     catch (const pqxx::data_exception& exception)
     {
-        subTransaction.abort();
+        transaction.abort();
         std::cerr << "Ошибка при удалении базы данных test: " << exception.what() << std::endl;
         return false;
     }
     catch (const pqxx::undefined_table& exception)
     {
-        subTransaction.abort();
+        transaction.abort();
         std::cerr << "Ошибка при удалении базы данных test: " << exception.what() << std::endl;
         return false;
     }
     catch (const std::exception& exception)
     {
-        subTransaction.abort();
+        transaction.abort();
         std::cerr << "Ошибка при удалении базы данных test: " << exception.what() << std::endl;
+        return false;
+    }
+    catch (...)
+    {
+        transaction.abort();
+        std::cerr << "Неизвестная ошибка!" << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+bool DatabaseFacade::DeleteTable()
+{
+    pqxx::transaction<> transaction(*_db.get());
+    pqxx::subtransaction subTransaction(transaction);
+    try
+    {
+        const std::string query = "DROP TABLE " + std::string(database_table);
+        subTransaction.exec0(query);
+        subTransaction.commit();
+        std::cout << "Таблица " + std::string(database_table) + " успешно удалилась" << std::endl;
+        return true;
+    }
+    catch (const pqxx::undefined_table& exception)
+    {
+        subTransaction.abort();
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const pqxx::data_exception& exception)
+    {
+        subTransaction.abort();
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& exception)
+    {
+        subTransaction.abort();
+        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
         return false;
     }
     catch (...)
@@ -296,46 +332,6 @@ bool DatabaseFacade::ClearTable()
         std::cerr << "Неизвестная ошибка!" << std::endl;
         return false;
     }
-    return true;
-}
-
-bool DatabaseFacade::DeleteTable()
-{
-    pqxx::transaction<> transaction(*_db.get());
-    pqxx::subtransaction subTransaction(transaction);
-    try
-    {
-        const std::string query = "DROP TABLE " + std::string(database_table);
-        subTransaction.exec0(query);
-        subTransaction.commit();
-        std::cout << "Таблица " + std::string(database_table) + " успешно удалилась" << std::endl;
-        return true;
-    }
-    catch (const pqxx::undefined_table& exception)
-    {
-        subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
-        return false;
-    }
-    catch (const pqxx::data_exception& exception)
-    {
-        subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
-        return false;
-    }
-    catch (const std::exception& exception)
-    {
-        subTransaction.abort();
-        std::cerr << "Ошибка при удалении таблицы " + std::string(database_table) + ": " << exception.what() << std::endl;
-        return false;
-    }
-    catch (...)
-    {
-        subTransaction.abort();
-        std::cerr << "Неизвестная ошибка!" << std::endl;
-        return false;
-    }
-    
     return true;
 }
 
@@ -395,11 +391,6 @@ void DatabaseFacade::Disconnect()
     std::cout << "Выполнено отключение к базе данных " << _db->dbname() << std::endl;
     _db->close();
     _db.reset();
-}
-
-bool DatabaseFacade::IsOpen()
-{
-    return _db && _db->is_open();
 }
 
 template <typename T>

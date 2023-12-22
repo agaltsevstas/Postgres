@@ -58,11 +58,10 @@ public:
     bool Load();
     bool Connection();
     void Disconnect();
-    bool IsOpen();
     bool CreateTable();
     bool Delete();
-    bool ClearTable();
     bool DeleteTable();
+    bool ClearTable();
     bool UpdateSurname(unsigned iKey, const std::string& iSurname);
     bool UpdateName(unsigned iKey, const std::string& iName);
     bool UpdatePatronymic(unsigned iKey, const std::string& iPatronymic);
