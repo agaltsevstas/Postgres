@@ -63,18 +63,24 @@ public:
     bool Delete();
     bool ClearTable();
     bool DeleteTable();
-    bool UpdateUser(unsigned iKey, const Data& iData);
     bool UpdateSurname(unsigned iKey, const std::string& iSurname);
     bool UpdateName(unsigned iKey, const std::string& iName);
     bool UpdatePatronymic(unsigned iKey, const std::string& iPatronymic);
     bool UpdateSex(unsigned iKey, const std::string& iSex);
     bool UpdateAge(unsigned iKey, unsigned iAge);
+    bool UpdateUser(unsigned iKey, const Data& iUser);
+    bool UpdateUser(unsigned iKey,
+                    const std::string& iSurname,
+                    const std::string& iName,
+                    const std::string& iPatronymic,
+                    const std::string& iSex,
+                    unsigned iAge);
     bool AddUser(const Data& iUser);
     bool AddUser(const std::string& iSurname,
                  const std::string& iName,
                  const std::string& iPatronymic,
                  const std::string& iSex,
-                 const unsigned iAge);
+                 unsigned iAge);
     bool AddUsers(const std::vector<Data>& iUsers);
     bool DeleteUser(unsigned iKey);
     bool DeleteUser(const std::string& iSurname,
@@ -84,11 +90,11 @@ public:
                     const std::string& iName,
                     const std::string& iPatronymic,
                     unsigned& oKey);
-    bool FindUser(unsigned iKey, Data& oData);
+    bool FindUser(unsigned iKey, Data& oUser);
     bool FindUser(const std::string& iSurname,
                   const std::string& iName,
                   const std::string& iPatronymic,
-                  Data& oData);
+                  Data& oUser);
     bool FindUser(unsigned iKey,
                   std::string& oSurname,
                   std::string& oName,
@@ -104,7 +110,7 @@ private:
     bool ExecuteRequest(const std::string& iQuery);
     template <typename T>
     bool ExecuteRequest(const std::string& iQuery, T& oResult);
-    bool FindUser(const std::string& iQuery, Data& oData);
+    bool FindUser(const std::string& iQuery, Data& oUser);
     
 private:
     std::unique_ptr<pqxx::connection> _db;
